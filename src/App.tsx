@@ -155,7 +155,14 @@ export default function App() {
   const [newAssetUrl, setNewAssetUrl] = useState("");
   const [newAssetType, setNewAssetType] = useState<'css' | 'js'>('css');
 
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  // Lazy AI Initialization
+  const getAI = useCallback(() => {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === "undefined" || apiKey === "null") {
+      throw new Error("GEMINI_API_KEY is not set. Please add it to your environment variables in Vercel.");
+    }
+    return new GoogleGenAI({ apiKey });
+  }, []);
 
   const generatePreview = useCallback(() => {
     const cssLinks = externalAssets.filter(a => a.type === 'css').map(a => `<link rel="stylesheet" href="${a.url}">`).join('\n');
@@ -275,6 +282,7 @@ export default function App() {
     setLogs(prev => [...prev, `🤖 AI Agent is thinking...`]);
     
     try {
+      const ai = getAI();
       const systemInstruction = `You are an expert web developer. Your task is to generate HTML, CSS, and JavaScript based on the user's request.
       Return the response in JSON format with the following structure:
       {
